@@ -4,6 +4,8 @@ let isFighting = false;
 
 // ========== 全局变量 - 圣遗物图片映射 ==========
 const artifactImageMap = {
+    "天之美赐 / 影中沉凝的幻灭": "assets/Artifacts/artifact_20.bmp",
+    "晨星与月的晓歌 / 风起之日": "assets/Artifacts/artifact_19.bmp",
     "穹境示现之夜 / 纺月的夜歌": "assets/Artifacts/artifact_0.bmp",
     "长夜之誓 / 深廊终曲": "assets/Artifacts/artifact_1.bmp",
     "黑曜秘典 / 烬城勇者绘卷": "assets/Artifacts/artifact_2.bmp",
