@@ -60,8 +60,8 @@ const findElementViewBtn = () => {
   return iro;
 };
 /** 查找奇域大厅按钮（判断处于奇域大厅） */
-const findBeyondHallBtn = () => {
-  const iro = findImageWithinBounds("assets/UI_BtnIcon_Beyond_Hall.png", 200, 0, 150, 100, {
+const findMiliastraBtn = () => {
+  const iro = findImageWithinBounds("assets/UI_BtnIcon_Miliastra.png", 960, 0, 960, 80, {
     useMask: true,
     threshold: 0.75,
   });
@@ -127,7 +127,7 @@ const clickToPrepare = () => {
 };
 /** 房间：查找加入准备区提示 */
 const findPrepareMsg = () => {
-  return findTextWithinBounds("加入准备", 576, 432, 768, 216, { contains: true });
+  return findTextWithinBounds("准备", 576, 432, 768, 216, { contains: true });
 };
 /** 存档：查找奇域收藏 */
 const findBeyondFavoritesBtn = () => {
@@ -172,6 +172,10 @@ const findDeleteExternalSaveChecked = (colPos) => {
 const findDeleteStageSaveBtn = () => {
   return findTextWithinBounds("删除所选", 1220, 980, 700, 100);
 };
+/** 关卡：查找结算跳过按钮 */
+const findSkipBtn = () => {
+  return findTextWithinBounds("跳过", 1720, 0, 200, 100, { contains: true });
+};
 /** 关卡：查找关卡退出按钮 */
 const findStageEscBtn = () => {
   const iro = findImageWithinBounds("assets/UI_Icon_Leave.png", 0, 0, 100, 100, {
@@ -183,7 +187,7 @@ const findStageEscBtn = () => {
 };
 /** 关卡：查找中断挑战按钮 */
 const findExitStageBtn = () => {
-  return findTextWithinBounds("中断挑战", 576, 324, 768, 432);
+  return findTextWithinBounds("中断挑战", 576, 324, 768, 432, { contains: true });
 };
 /** 退出：查找返回提瓦特按钮 */
 const findGotTeyvatBtn = () => {
@@ -229,7 +233,6 @@ export {
   findBeyondBattlepassBtn,
   findBeyondBattlepassPopup,
   findBeyondFavoritesBtn,
-  findBeyondHallBtn,
   findBottomBtnText,
   findClearInputBtn,
   findCloseDialog,
@@ -249,12 +252,14 @@ export {
   findHeaderTitle,
   findLeaveRoomBtn,
   findManageStagesBtn,
+  findMiliastraBtn,
   findPaimon,
   findPrepareMsg,
   findSaveToDeletePos,
   findSearchWonderlandBtn,
   findSearchWonderlandInput,
   findSearchWonderlandThrottleMsg,
+  findSkipBtn,
   findStageEscBtn,
   findUidText,
 };
