@@ -136,17 +136,23 @@
             // 第五步：识别限时开放状态
             log.info('[限时全开] 第五步: 识别限时开放状态');
             let limitHit = __wipOcrCheckText([761, 261, 384, 31], ["限时", "开放", "特定秘境"], "限时全开-限时状态");
-            if (!limitHit) { log.info('[限时全开] 限时状态识别失败，重试1...'); await sleep(2000); limitHit = __wipOcrCheckText([761, 261, 384, 31], ["限时", "开放", "特定秘境"], "限时全开-限时状态-r1"); }
-            if (!limitHit) { log.info('[限时全开] 限时状态识别失败，重试2...'); await sleep(2000); limitHit = __wipOcrCheckText([761, 261, 384, 31], ["限时", "开放", "特定秘境"], "限时全开-限时状态-r2"); }
+            if (!limitHit) { log.info('[限时全开] 限时状态识别失败，重试1...'); await sleep(1000); limitHit = __wipOcrCheckText([761, 261, 384, 31], ["限时", "开放", "特定秘境"], "限时全开-限时状态-r1"); }
+            if (!limitHit) { log.info('[限时全开] 限时状态识别失败，重试2...'); await sleep(1000); limitHit = __wipOcrCheckText([761, 261, 384, 31], ["限时", "开放", "特定秘境"], "限时全开-限时状态-r2"); }
 
             const result = limitHit ? true : false;
             const timeText = limitHit ? limitHit.text : "";
             log.info(`[限时全开] 检测结果: ${result ? `有限时开放 [${timeText}]` : '无限时开放'}`);
+
+            try { await genshin.returnMainUi(); } catch(e) { log.warn(`[限时全开] 还原主界面失败: ${e.message}`); }
+            await sleep(500);
+
             return { result: result, timeText: timeText };
 
         } catch (ex) {
             log.warn(`[限时全开] 检测异常: ${ex.message}`);
-            return { result: null, timeText: "" };  // 返回result为null表示检测异常
+            try { await genshin.returnMainUi(); } catch(e2) { log.warn(`[限时全开] 异常后还原主界面失败: ${e2.message}`); }
+            await sleep(500);
+            return { result: null, timeText: "" };
         }
     }
 
@@ -235,16 +241,37 @@
     let pTalent = userConfig.TargetTalentMaterialName;
     let pWeapon = userConfig.TargetWeaponMaterialName;
     let pArtifact = userConfig.TargetArtifactName;
-    let selectedCount = (pTalent ? 1 : 0) + (pWeapon ? 1 : 0) + (pArtifact ? 1 : 0);
-
-    if (selectedCount === 0) {
-        log.error("【配置错误】您未选择任何素材！请在天赋、武器或圣遗物中选择一项。");
+    let pAutoSwitchToArtifact = userConfig.AutoSwitchToArtifactWhenNotMatch;
+    
+    // 检查武器和天赋是否同时选择（始终互斥）
+    if (pTalent && pWeapon) {
+        log.error("【配置冲突】您同时选择了角色天赋素材和武器升级素材！请只保留一项。");
         return;
     }
-    if (selectedCount > 1) {
-        log.error("【配置冲突】您同时选择了多种类型的素材！请只保留一项，将其余两项设为空。");
+    
+    // 检查是否选择了任何素材
+    let hasTalentOrWeapon = !!pTalent || !!pWeapon;
+    let hasArtifact = !!pArtifact;
+    
+    if (!hasTalentOrWeapon && !hasArtifact) {
+        log.error("【配置错误】您未选择任何素材！请至少选择一项。");
         return;
     }
+    
+    // 当启用"不命中规则时刷取圣遗物"时，允许同时选择圣遗物和武器/天赋
+    // 否则，只能选择一项
+    if (pAutoSwitchToArtifact) {
+        if (!hasTalentOrWeapon || !hasArtifact) {
+            log.warn("【配置警告】已勾选'不命中规则时刷取圣遗物'，但未同时选择素材与圣遗物，该选项将被视为未勾选。");
+            pAutoSwitchToArtifact = false;
+        }
+    }
+    if (!pAutoSwitchToArtifact && hasTalentOrWeapon && hasArtifact) {
+        log.error("【配置冲突】您同时选择了圣遗物和其他素材！请只保留一项，或勾选'不命中规则时刷取圣遗物'并正确配置。");
+        return;
+    }
+    
+    // 默认优先使用武器/天赋，没有则使用圣遗物
     let pTargetMaterial = pTalent || pWeapon || pArtifact;
 
     // --- 1.2 队伍名称防呆 (input-text) ---
@@ -376,6 +403,7 @@
 
         // --- 日期检查与限时全开检测 ---
         let isLimitedOpen = false;  // 是否检测到限时全开（声明在外部作用域）
+        let isSwitchedToArtifact = false;  // 是否已切换到圣遗物
         
         // 圣遗物每日开放，无需日期检查和限时全开检测
         if (materialInfo.type !== 'artifact') {
@@ -395,15 +423,45 @@
                         log.info(`【限时全开检测】检测到限时全开活动，允许进入秘境。`);
                         safeNotify("info", `[限时全开] 检测结果：有限时开放 [${limitedTimeText}]`);
                     } else if (isLimitedOpen === false) {
-                        log.error(`【停止运行】日期不匹配且未检测到限时全开活动。`);
-                        return;
+                        // 未检测到限时全开，检查是否启用自动切换到圣遗物
+                        if (pAutoSwitchToArtifact && pArtifact) {
+                            log.warn(`【自动切换】日期不匹配且无限时全开，自动切换到圣遗物【${pArtifact}】。`);
+                            // 重新获取圣遗物的信息
+                            materialInfo = MATERIAL_DB[pArtifact];
+                            pDomainName = materialInfo.domain;
+                            pTargetMaterial = pArtifact;
+                            pSundaySelectedValue = "";
+                            isSwitchedToArtifact = true;
+                        } else {
+                            log.error(`【停止运行】日期不匹配且未检测到限时全开活动。`);
+                            return;
+                        }
                     } else {
                         // isLimitedOpen === null，检测异常
-                        log.error(`【停止运行】限时全开检测异常，无法确定活动状态。`);
-                        return;
+                        if (pAutoSwitchToArtifact && pArtifact) {
+                            log.warn(`【自动切换】限时全开检测异常，自动切换到圣遗物【${pArtifact}】。`);
+                            // 重新获取圣遗物的信息
+                            materialInfo = MATERIAL_DB[pArtifact];
+                            pDomainName = materialInfo.domain;
+                            pTargetMaterial = pArtifact;
+                            pSundaySelectedValue = "";
+                            isSwitchedToArtifact = true;
+                        } else {
+                            log.error(`【停止运行】限时全开检测异常，无法确定活动状态。`);
+                            return;
+                        }
                     }
+                } else if (pAutoSwitchToArtifact && pArtifact) {
+                    // 未启用自动识别，但启用了自动切换到圣遗物
+                    log.warn(`【自动切换】日期不匹配，自动切换到圣遗物【${pArtifact}】。`);
+                    // 重新获取圣遗物的信息
+                    materialInfo = MATERIAL_DB[pArtifact];
+                    pDomainName = materialInfo.domain;
+                    pTargetMaterial = pArtifact;
+                    pSundaySelectedValue = "";
+                    isSwitchedToArtifact = true;
                 } else {
-                    log.error(`【停止运行】今日非该素材开放日。若需强制运行或自动识别限时全开，请在设置中勾选。`);
+                    log.error(`【停止运行】今日非该素材开放日。若需强制运行、自动识别限时全开或自动切换圣遗物，请在设置中勾选。`);
                     return;
                 }
             }
@@ -415,6 +473,8 @@
                 notifyMsg = `任务启动：今日为游戏内星期${dayStr}，日期不匹配，强制运行进入秘境【${pDomainName} - ${pTargetMaterial}】。`;
             } else if (pAutoDetectLimitedOpen && isLimitedOpen) {
                 notifyMsg = `任务启动：今日为游戏内星期${dayStr}，日期不匹配，检测到限时全开进入秘境【${pDomainName} - ${pTargetMaterial}】。`;
+            } else if (isSwitchedToArtifact) {
+                notifyMsg = `任务启动：今日为游戏内星期${dayStr}，日期不匹配，自动切换到圣遗物【${pDomainName} - ${pTargetMaterial}】。`;
             }
         }
         safeNotify("info", notifyMsg);

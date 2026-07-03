@@ -96,6 +96,12 @@
     "default": false
   },
   {
+    "name": "AutoSwitchToArtifactWhenNotMatch",
+    "type": "checkbox",
+    "label": "不命中规则时刷取圣遗物(开启后可以同时选择素材与圣遗物（角色和武器素材之间保持互斥）)",
+    "default": false
+  },
+  {
     "name": "PartyName",
     "type": "input-text",
     "label": "自动切换到指定队伍 (支持正则)",
@@ -163,7 +169,7 @@
   {
     "name": "SpecifiedCombatStrategy",
     "type": "input-text",
-    "label": "指定战斗策略名称 (不含.txt)",
+    "label": "指定战斗策略名称",
     "default": ""
   },
   {
