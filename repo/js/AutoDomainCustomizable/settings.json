@@ -2,7 +2,7 @@
   {
     "name": "separator",
     "type": "separator",
-    "label": "                        素材选择区（自动判定日期）\n           三个选项默认互相冲突，请只选一个刷取目标"
+    "label": "                         素材选择区（自动判定日期）\n            三个选项默认互相冲突，请只选一个刷取目标"
   },
   {
     "name": "TargetTalentMaterialName",
@@ -98,7 +98,7 @@
   {
     "name": "AutoSwitchToArtifactWhenNotMatch",
     "type": "checkbox",
-    "label": "不命中规则时刷取圣遗物(开启后可以同时选择素材与圣遗物（角色和武器素材之间保持互斥）)",
+    "label": "不命中规则时刷取圣遗物\n(开启后可以同时选择素材与圣遗物,角色和武器素材之间保持互斥)",
     "default": false
   },
   {
