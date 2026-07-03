@@ -2,7 +2,7 @@
   {
     "name": "separator",
     "type": "separator",
-    "label": "                         素材选择区（自动判定日期）\n            三个选项默认互相冲突，请只选一个刷取目标"
+    "label": "                             素材选择区（自动判定日期）\n                三个选项默认互相冲突，请只选一个刷取目标"
   },
   {
     "name": "TargetTalentMaterialName",
