@@ -98,7 +98,7 @@
   {
     "name": "AutoSwitchToArtifactWhenNotMatch",
     "type": "checkbox",
-    "label": "不命中规则时刷取圣遗物\n(开启后可以同时选择素材与圣遗物,角色和武器素材之间保持互斥)",
+    "label": "闲时刷取圣遗物\n(材料本未开放时自动刷取圣遗物,开启后可以同时选择素材与圣遗物进行刷取)",
     "default": false
   },
   {
