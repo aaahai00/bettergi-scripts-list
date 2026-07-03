@@ -122,12 +122,21 @@ let isFighting = false;
         if (CombatStrategyType === "指定战斗策略") {
             if (!SpecifiedCombatStrategy) {
                 log.warn("【配置警告】您选择了'指定战斗策略'但未填写策略名称，系统将自动退回'根据队伍自动选择'。");
-            } else if (/[:*?"<>|]/.test(SpecifiedCombatStrategy)) {
+            } else if (/[/:*?"<>|]/.test(SpecifiedCombatStrategy)) {
                 // 只禁止除反斜杠外的非法字符（反斜杠是合法路径分隔符）
                 log.warn(`【配置警告】指定的战斗策略名称包含非法字符: ${SpecifiedCombatStrategy}，系统将自动退回'根据队伍自动选择'。`);
             } else {
-                // 将单反斜杠转换为双反斜杠（处理转义问题）
-                CombatStrategyPath = SpecifiedCombatStrategy.replace(/\\/g, "\\\\");
+                let strategyName = SpecifiedCombatStrategy;
+                // 自动去除 .txt 后缀（无论用户是否填写，底层都会追加）
+                if (strategyName.toLowerCase().endsWith(".txt")) {
+                    strategyName = strategyName.substring(0, strategyName.length - 4);
+                }
+                // 路径分隔符标准化：单反斜杠 → 双反斜杠，已转义则跳过
+                if (strategyName.includes("\\") && !strategyName.includes("\\\\")) {
+                    CombatStrategyPath = strategyName.replace(/\\/g, "\\\\");
+                } else {
+                    CombatStrategyPath = strategyName;
+                }
                 log.info(`战斗策略路径: "${CombatStrategyPath}"`);
             }
         }
@@ -841,7 +850,7 @@ let isFighting = false;
     
     }
 
-    log.warn("自动幽境危战版本：v2.2");
+    log.warn("自动幽境危战版本：v2.3");
     log.warn("请保证队伍战斗实力，战斗失败或执行错误，会重试两次...");
     log.warn("使用前请在 <<幽境危战>> 中配置好战斗队伍...");
     log.info("使用树脂顺序：{0} ", golbalRewardText.join(" ->"))     
