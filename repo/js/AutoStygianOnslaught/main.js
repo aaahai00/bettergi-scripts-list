@@ -868,17 +868,52 @@ let isFighting = false;
                 await pathingScript.runFile(`assets/全自动幽境危战.json`);
                 await VeinEntrance();             
 
-                //2.难度确认和选择
-                let intoAction  = await Textocr("单人挑战",20,0,0,1554,970,360, 105);
-                if (!intoAction.found){
+                //2.难度确认和选择（同时检测非爆发期界面）
+                let intoAction = null;
+                let isNonBurst = false;
+                let _pollStart = new Date();
+                while (true) {
+                    let _cap = captureGameRegion();
+                    let _resList = _cap.findMulti(RecognitionObject.ocr(1554, 970, 360, 105));
+                    for (let _ri = 0; _ri < _resList.count; _ri++) {
+                        if (_resList[_ri].text === "单人挑战") {
+                            intoAction = { text: _resList[_ri].text, x: _resList[_ri].x, y: _resList[_ri].y, found: true };
+                            break;
+                        }
+                    }
+                    _cap.dispose();
+                    if (intoAction) break;
+                    await sleep(100);
+
+                    _cap = captureGameRegion();
+                    _resList = _cap.findMulti(RecognitionObject.ocr(861, 426, 197, 70));
+                    for (let _ri = 0; _ri < _resList.count; _ri++) {
+                        if (_resList[_ri].text === "紊乱平息") {
+                            isNonBurst = true;
+                            break;
+                        }
+                    }
+                    _cap.dispose();
+                    if (isNonBurst) break;
+
+                    if (new Date() - _pollStart > 20000) {
+                        await genshin.returnMainUi();
+                        throw new Error("未进入挑战页面，停止执行...")
+                    }
+                    await sleep(100);
+                }
+
+                if (isNonBurst) {
                     await genshin.returnMainUi();
-                    throw new Error("未进入挑战页面，停止执行...")
+                    resinAgain = false;
+                    throw new Error("当前处于非爆发期（紊乱平息），停止执行...")
                 }
 
                 //2.5 判断爆发期
                 let rewardsBu  = await imageRecognition(rewardsButton,0.1, 0, 0,63,949,87,80);
                 if (!rewardsBu.found){
                     await genshin.returnMainUi();
+                    resinAgain = false;
                     throw new Error("未在爆发期内，停止执行...")
                 }
 
@@ -1086,6 +1121,9 @@ let isFighting = false;
         catch (error) {
             //9.执行错误，重试处理            
             log.error(`执行过程中发生错误：${error.message}`);
+            if (resinAgain === false) {
+                break;
+            }
             resinAgain = true;
             await genshin.returnMainUi(); 
             continue;
